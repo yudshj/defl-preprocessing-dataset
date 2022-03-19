@@ -1,0 +1,12 @@
+.ipynb_checkpoints
+.idea
+__pycache__
+
+*.npz
+*.npy
+*.csv
+*.log
+*.pkl
+*.sav
+*.hdf5
+vocab.txt
