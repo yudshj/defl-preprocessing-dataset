@@ -2,6 +2,7 @@
 .idea
 __pycache__
 
+*.h5
 *.npz
 *.npy
 *.csv
