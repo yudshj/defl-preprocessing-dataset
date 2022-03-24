@@ -1,17 +1,15 @@
 from keras.layers import Dense, Conv2D, BatchNormalization, Activation
 from keras.layers import MaxPooling2D, AveragePooling2D
-from keras.layers import Input, Flatten, Dropout
-from keras.layers.merge import concatenate
-from tensorflow.keras.optimizers import RMSprop
+from keras.layers import Input, Flatten, Dropout, Concatenate
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
 from keras.callbacks import LearningRateScheduler
 from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Model
 from keras.datasets import cifar10
-from tensorflow.keras.utils import plot_model
-from tensorflow.keras.utils import to_categorical
+
 import os
 import numpy as np
+import tensorflow as tf
 
 # training parameters
 batch_size = 32
@@ -36,7 +34,7 @@ num_filters_bef_dense_block = 2 * growth_rate
 compression_factor = 0.5
 
 # load the CIFAR10 data
-(x_train, y_train), (x_test, y_test) = (np.load('cifar10_x_train.npy'), np.load('cifar10_y_train.npy')), (np.load('cifar10_x_test.npy'), np.load('cifar10_y_test.npy'))
+(x_train, y_train), (x_test, y_test) = (np.load('./data/cifar10_x_train.npy'), np.load('./data/cifar10_y_train.npy')), (np.load('./data/cifar10_x_test.npy'), np.load('./data/cifar10_y_test.npy'))
 
 # input image dimensions
 input_shape = x_train.shape[1:]
@@ -50,8 +48,8 @@ print(x_test.shape[0], 'test samples')
 print('y_train shape:', y_train.shape)
 
 # convert class vectors to binary class matrices.
-y_train = to_categorical(y_train, num_classes)
-y_test = to_categorical(y_test, num_classes)
+y_train = tf.keras.utils.to_categorical(y_train, num_classes)
+y_test = tf.keras.utils.to_categorical(y_test, num_classes)
 
 def lr_schedule(epoch):
     """Learning Rate Schedule
@@ -84,7 +82,7 @@ x = Conv2D(num_filters_bef_dense_block,
            kernel_size=3,
            padding='same',
            kernel_initializer='he_normal')(x)
-x = concatenate([inputs, x])
+x = Concatenate()([inputs, x])
 
 # stack of dense blocks bridged by transition layers
 for i in range(num_dense_blocks):
@@ -106,7 +104,7 @@ for i in range(num_dense_blocks):
                    kernel_initializer='he_normal')(y)
         if not data_augmentation:
             y = Dropout(0.2)(y)
-        x = concatenate([x, y])
+        x = Concatenate()([x, y])
 
     # no transition layer after the last dense block
     if i == num_dense_blocks - 1:
@@ -137,12 +135,13 @@ outputs = Dense(num_classes,
 # orig paper uses SGD but RMSprop works better for DenseNet
 model = Model(inputs=inputs, outputs=outputs)
 model.compile(loss='categorical_crossentropy',
-              optimizer=RMSprop(1e-3),
+              optimizer=tf.keras.optimizers.RMSprop(1e-3),
               metrics=['accuracy'])
 model.summary()
-model.save('cifar10_init_model.h5')
+model.save('./data/cifar10_init_model.h5')
 exit(0)
-plot_model(model, to_file="cifar10-densenet.png", show_shapes=True)
+
+tf.keras.utils.plot_model(model, to_file="cifar10-densenet.png", show_shapes=True)
 
 # prepare model model saving directory
 save_dir = os.path.join(os.getcwd(), 'saved_models')

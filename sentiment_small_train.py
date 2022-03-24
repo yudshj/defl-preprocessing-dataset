@@ -5,7 +5,7 @@ import numpy as np
 import scipy.sparse as sp
 from keras import Model
 import subprocess
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 
 
@@ -15,7 +15,7 @@ if gpus:
     try:
         tf.config.experimental.set_virtual_device_configuration(
             gpus[0],
-            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=4096)])
+            [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=3000)])
         logical_gpus = tf.config.experimental.list_logical_devices('GPU')
         print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
     except RuntimeError as e:
@@ -61,11 +61,10 @@ shuffle_train = True
 repeat_train = False
 
 _SEQUENCE_LENGTH = 60
-_LSTM_SIZE = 128
-_KEY_DIM = 256
+_LSTM_SIZE = 64
+_KEY_DIM = 128
 _WEIGHT_DECAY = 3e-4
 _DROPOUT = 0.6
-_EPOCHS = 80
 
 
 
@@ -86,7 +85,7 @@ x = tf.keras.layers.Embedding(embedding_matrix.shape[0],embedding_matrix.shape[1
 x = tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(_LSTM_SIZE, return_sequences=True))(x)
 # x = tf.keras.layers.LSTM(_LSTM_SIZE, return_sequences=True)(x)
 
-x = tf.keras.layers.MultiHeadAttention(num_heads=4, key_dim=_KEY_DIM, dropout=_DROPOUT)(x, x)
+x = tf.keras.layers.MultiHeadAttention(num_heads=8, key_dim=_KEY_DIM, dropout=_DROPOUT)(x, x)
 x = tf.keras.layers.Flatten()(x)
 x = tf.keras.layers.BatchNormalization()(x)
 
@@ -150,11 +149,11 @@ model.compile(
 
 history = model.fit(
     train_ds,
-    epochs=_EPOCHS,
+    epochs=30,
     steps_per_epoch=steps_per_epoch,
     validation_data=test_ds,
     validation_freq=1,
-    callbacks=[tf.keras.callbacks.CSVLogger('./logs/sentiment140_train.log')]
+    callbacks=[tf.keras.callbacks.CSVLogger('./logs/sentiment140_small_train.log')]
 )
 
 
