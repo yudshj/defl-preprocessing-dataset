@@ -20,8 +20,9 @@ if socket.gethostname() == 'GPU-SERVER':
             # Virtual devices must be set before GPUs have been initialized
             print(e)
 
-_NUM_CLASSES=10
-_LEARNING_RATE=1e-3
+_NUM_CLASSES = 10
+_LEARNING_RATE = 1e-3
+
 
 def load_data_x_y(x_path: str, y_path: str, do_label_flip: bool, to_one_hot: bool, normalize: bool = True):
     x = np.load(x_path)
@@ -39,7 +40,6 @@ def load_data_x_y(x_path: str, y_path: str, do_label_flip: bool, to_one_hot: boo
     return tf.data.Dataset.from_tensor_slices((x, y))
 
 
-
 # tf.keras.backend.clear_session()
 
 
@@ -48,16 +48,15 @@ def load_data_x_y(x_path: str, y_path: str, do_label_flip: bool, to_one_hot: boo
 #     tf.keras.layers.RandomTranslation(4/32, 4/32, fill_mode='nearest'),
 # ])
 
-data_augmentation = tf.keras.models.load_model('./data/cifar10_augmentation.h5')
-
 
 with tf.device('/cpu:0'):
-    ds = load_data_x_y('./data/cifar10_x_train.npy', './data/cifar10_y_train.npy', False, True, True).map(lambda img,label: (data_augmentation(img),label), num_parallel_calls=8)
+    data_augmentation = tf.keras.models.load_model('./data/cifar10_augmentation.h5')
+    ds = load_data_x_y('./data/cifar10_x_train.npy', './data/cifar10_y_train.npy', False, True, True).map(
+        lambda img, label: (data_augmentation(img), label), num_parallel_calls=8)
     ds = ds.shuffle(buffer_size=50000).batch(32).prefetch(tf.data.AUTOTUNE)
     # ds = ds.repeat()
     test_ds = load_data_x_y('./data/cifar10_x_test.npy', './data/cifar10_y_test.npy', False, True, True)
     test_ds = test_ds.batch(128).prefetch(tf.data.AUTOTUNE)
-
 
 
 model = tf.keras.models.load_model('./data/cifar10_init_model.h5')
@@ -65,11 +64,15 @@ model.compile(
     optimizer=tf.keras.optimizers.RMSprop(_LEARNING_RATE),
     loss=tf.keras.losses.CategoricalCrossentropy(from_logits=False),
     metrics=[tf.metrics.CategoricalAccuracy()],
-    jit_compile=True,
 )
 model.summary()
 
-
+callbacks = [
+    tf.keras.callbacks.ModelCheckpoint('./model/cifar10_model_{epoch:03d}.h5',
+                                       monitor='val_categorical_accuracy',
+                                       save_best_only=True),
+    tf.keras.callbacks.CSVLogger('./logs/cifar10_log.csv'),
+]
 
 history = model.fit(
     ds,
@@ -80,7 +83,4 @@ history = model.fit(
     callbacks=[tf.keras.callbacks.CSVLogger('./logs/cifar10_train.log')]
 )
 
-
-
 print(history.history['val_accuracy'])
-
