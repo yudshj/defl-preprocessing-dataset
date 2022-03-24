@@ -80,7 +80,7 @@ history = model.fit(
     # steps_per_epoch=800,
     validation_data=test_ds,
     validation_freq=1,
-    callbacks=[tf.keras.callbacks.CSVLogger('./logs/cifar10_train.log')]
+    callbacks=callbacks,
 )
 
 print(history.history['val_accuracy'])
