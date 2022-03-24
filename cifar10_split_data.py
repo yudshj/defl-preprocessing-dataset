@@ -5,7 +5,45 @@
 
 
 import numpy as np
+import os
 import tensorflow as tf
+
+from collections import Counter
+from pathlib import Path
+
+# In[]:
+
+
+iid_4 = {
+    0: [1, 1, 1, 1],
+    1: [1, 1, 1, 1],
+    2: [1, 1, 1, 1],
+    3: [1, 1, 1, 1],
+    4: [1, 1, 1, 1],
+    5: [1, 1, 1, 1],
+    6: [1, 1, 1, 1],
+    7: [1, 1, 1, 1],
+    8: [1, 1, 1, 1],
+    9: [1, 1, 1, 1],
+}
+
+non_iid_4 = {
+    0: [7, 1, 1, 1],
+    1: [1, 7, 1, 1],
+    2: [1, 1, 7, 1],
+    3: [1, 1, 1, 7],
+
+    4: [2, 1, 1, 1],
+    5: [1, 2, 1, 1],
+    6: [1, 1, 2, 1],
+    7: [1, 1, 1, 2],
+
+    8: [1, 1, 1, 1],
+    9: [1, 1, 1, 1],
+}
+
+splita_name = "iid_4"
+distrib = iid_4
 
 
 # In[]:
@@ -26,20 +64,23 @@ def get_split_results(distribution, x, y, verbose=False):
                 split_results[i].append((img, label))
     if verbose:
         for i, res in enumerate(split_results):
-            print(f'  node-{i} got {len(res)} samples')
+            counter = Counter(i for _, i in res)
+            print(f'  node-{i} got {len(res)} samples', sorted(counter.items()))
     return split_results
 
 
 # In[]:
 
 
-def output_to_files(split_results, suffix: str = ""):
+def output_to_files(split_results, splita: str, suffix: str = ""):
+    output_dir = Path(f'./data/splits/{splita}/')
+    output_dir.mkdir(parents=True, exist_ok=True)
     for i, split_result in enumerate(split_results):
         node_x, node_y = zip(*split_result)
         node_x = np.array(node_x, dtype=np.uint8)
         node_y = np.array(node_y, dtype=np.uint8)
-        np.savez_compressed(f"data/splits/iid/cifar10_node-{i}_x_{suffix}.npz", node_x)
-        np.savez_compressed(f"data/splits/iid/cifar10_node-{i}_y_{suffix}.npz", node_y)
+        np.savez_compressed(output_dir.joinpath(f'cifar10_node-{i}_x_{suffix}.npz'), node_x)
+        np.savez_compressed(output_dir.joinpath(f'cifar10_node-{i}_y_{suffix}.npz'), node_y)
 
 
 # In[]:
@@ -67,27 +108,7 @@ print(x_test.shape)
 # In[]:
 
 
-iid = {
-    0: [1, 1, 1, 1],
-    1: [1, 1, 1, 1],
-    2: [1, 1, 1, 1],
-    3: [1, 1, 1, 1],
-    4: [1, 1, 1, 1],
-    5: [1, 1, 1, 1],
-    6: [1, 1, 1, 1],
-    7: [1, 1, 1, 1],
-    8: [1, 1, 1, 1],
-    9: [1, 1, 1, 1],
-}
-
-# In[]:
-
-
-train_split_results = get_split_results(iid, x_train, y_train, verbose=True)
-test_split_results = get_split_results(iid, x_test, y_test, verbose=True)
-
-# In[]:
-
-
-output_to_files(train_split_results, suffix="train")
-output_to_files(test_split_results, suffix="test")
+train_split_results = get_split_results(distribution=distrib, x=x_train, y=y_train, verbose=True)
+test_split_results = get_split_results(distribution=distrib, x=x_test, y=y_test, verbose=True)
+output_to_files(train_split_results, splita=splita_name, suffix="train")
+output_to_files(test_split_results, splita=splita_name, suffix="test")
