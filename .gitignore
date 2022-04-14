@@ -10,4 +10,5 @@ __pycache__
 *.pkl
 *.sav
 *.hdf5
+*.swp
 vocab.txt

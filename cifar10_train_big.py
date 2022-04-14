@@ -72,7 +72,5 @@ history = model.fit(
     callbacks=[tf.keras.callbacks.CSVLogger('./logs/cifar10_train_big.log')]
 )
 
-
-
 print(history.history['val_accuracy'])
 
